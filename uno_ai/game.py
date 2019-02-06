@@ -13,13 +13,13 @@ class Game:
         Get the current action mask for the player.
         """
         pass
-    
+
     def obs(self, player):
         """
         Generate an observation vector for the player.
         """
         pass
-    
+
     def act(self, logits):
         """
         Perform actions by providing the logits for all of
@@ -30,4 +30,3 @@ class Game:
               These will automatically be masked.
         """
         pass
-
