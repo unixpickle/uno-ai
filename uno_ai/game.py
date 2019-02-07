@@ -15,7 +15,8 @@ class GameState(Enum):
     PLAY_DRAWN = 2
     PICK_COLOR = 3
     PICK_COLOR_INIT = 4
-    CHALLENGE = 5
+    CHALLENGE_VALID = 5
+    CHALLENGE_INVALID = 6
 
 
 class Game:
@@ -76,7 +77,7 @@ class Game:
             return res
         elif self._state == GameState.PICK_COLOR or self._state == GameState.PICK_COLOR_INIT:
             return [PickColorAction(c) for c in [Color.RED, Color.ORANGE, Color.GREEN, Color.BLUE]]
-        elif self._state == GameState.CHALLENGE:
+        elif self._state == GameState.CHALLENGE_VALID or self._state == GameState.CHALLENGE_INVALID:
             return [NopAction(), ChallengeAction()]
         raise RuntimeError('invalid state')
 
@@ -108,38 +109,58 @@ class Game:
                 self._play_card(action)
         elif self._state == GameState.PICK_COLOR or self._state == GameState.PICK_COLOR_INIT:
             disc = self._discard[-1]
+            last_disc = self._discard[-2]
             disc.color = action.color
             if self._state == GameState.PICK_COLOR:
                 if disc.card_type == CardType.WILD:
                     self._state = GameState.PLAY_OR_DRAW
+                elif any(x.color == last_disc.color for x in self._current_hand()):
+                    self._state = GameState.CHALLENGE_INVALID
                 else:
-                    self._state = GameState.CHALLENGE
+                    self._state = GameState.CHALLENGE_VALID
                 self._advance_turn()
             else:
                 self._state = GameState.PLAY
-        elif self._state == GameState.CHALLENGE:
+        elif self._state == GameState.CHALLENGE_VALID or self._state == GameState.CHALLENGE_INVALID:
             if isinstance(action, NopAction):
                 for _ in range(4):
                     self._current_hand().append(self._draw())
                 self._advance_turn()
+            elif self._state == GameState.CHALLENGE_INVALID:
+                self._advance_turn(by=-1)
+                for _ in range(4):
+                    self._current_hand().append(self._draw())
+                self._advance_turn(by=2)
             else:
-                # TODO: Check the challenge.
-                pass
+                for _ in range(6):
+                    self._current_hand().append(self._draw())
                 self._advance_turn()
 
-    def _advance_turn(self):
-        self._turn += self._direction
-        if self._turn < 0:
+    def _advance_turn(self, by=1):
+        self._turn += by * self._direction
+        while self._turn < 0:
             self._turn += self._num_players
-        elif self._turn >= self._num_players:
+        while self._turn >= self._num_players:
             self._turn -= self._num_players
 
     def _play_card(self, action):
         card = self._current_hand()[action.index]
         self._current_hand().remove(card)
         self._discard.append(card)
-        # TODO: figure out what to do with the card from here.
-        self._advance_turn()
+        if card.card_type == CardType.NUMERAL:
+            self._advance_turn()
+        elif card.card_type == CardType.SKIP:
+            self._advance_turn(by=2)
+        elif card.card_type == CardType.REVERSE:
+            self._direction *= -1
+            self._advance_turn()
+        elif card.card_type == CardType.DRAW_TWO:
+            self._advance_turn()
+            for _ in range(2):
+                self._current_hand().append(self._draw())
+            self._advance_turn()
+        elif card.card_type == CardType.WILD or card.card_type == CardType.WILD_DRAW:
+            self._state = GameState.PICK_COLOR
 
     def _draw(self):
         if len(self._deck):
