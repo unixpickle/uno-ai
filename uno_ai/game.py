@@ -45,7 +45,7 @@ class Game:
         """
         If the game has ended, get the winner.
         """
-        for i, hand in self._hands:
+        for i, hand in enumerate(self._hands):
             if not len(hand):
                 return i
         return None
@@ -117,9 +117,9 @@ class Game:
                 self._play_card(action)
         elif self._state == GameState.PICK_COLOR or self._state == GameState.PICK_COLOR_INIT:
             disc = self._discard[-1]
-            last_disc = self._discard[-2]
             disc.color = action.color
             if self._state == GameState.PICK_COLOR:
+                last_disc = self._discard[-2]
                 if disc.card_type == CardType.WILD:
                     self._state = GameState.PLAY_OR_DRAW
                 elif any(x.color == last_disc.color for x in self._current_hand()):
@@ -143,6 +143,7 @@ class Game:
                 for _ in range(6):
                     self._current_hand().append(self._draw())
                 self._advance_turn()
+            self._state = GameState.PLAY_OR_DRAW
 
     def _advance_turn(self, by=1):
         self._turn += by * self._direction
@@ -152,7 +153,7 @@ class Game:
             self._turn -= self._num_players
 
     def _play_card(self, action):
-        card = self._current_hand()[action.index]
+        card = self._current_hand()[action.raw_index]
         self._current_hand().remove(card)
         self._discard.append(card)
         if card.card_type == CardType.NUMERAL:
@@ -169,6 +170,8 @@ class Game:
             self._advance_turn()
         elif card.card_type == CardType.WILD or card.card_type == CardType.WILD_DRAW:
             self._state = GameState.PICK_COLOR
+            return
+        self._state = GameState.PLAY_OR_DRAW
 
     def _draw(self):
         if len(self._deck):
