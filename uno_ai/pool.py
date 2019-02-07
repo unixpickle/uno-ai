@@ -17,6 +17,9 @@ class Pool:
             os.mkdir(dir_path)
         self.agent_names = [x for x in os.listdir(dir_path) if x.endswith('.pt')]
 
+    def empty(self):
+        return len(self.agent_names) == 0
+
     def add(self, agent):
         """
         Add an agent to the pool.
