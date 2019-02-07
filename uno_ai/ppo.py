@@ -31,7 +31,7 @@ class PPO:
         clip_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
         pi_loss = -torch.mean(torch.min(ratio * batch.advs, clip_ratio * batch.advs))
 
-        neg_entropy = torch.mean(torch.sum(torch.exp(log_probs) * log_probs, dim=-1))
+        neg_entropy = torch.mean(torch.sum(torch.exp(all_probs) * all_probs, dim=-1))
         ent_loss = self.ent_reg * neg_entropy
 
         loss = vf_loss + pi_loss + ent_loss
