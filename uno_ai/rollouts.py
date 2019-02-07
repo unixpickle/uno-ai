@@ -108,7 +108,7 @@ class RolloutBatch:
                 obs_seq.append([0.0] * OBS_VECTOR_SIZE)
                 act_seq.append([1.0] + [0.0] * (ACTION_VECTOR_SIZE - 1))
                 log_seq.append(0)
-                mask_seq.append(_one_hot_action(0))
+                mask_seq.append(act_seq[-1])
                 adv_seq.append(0)
                 targ_seq.append(0)
             observations.append(obs_seq)
