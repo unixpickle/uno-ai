@@ -3,6 +3,7 @@ Train an Uno agent.
 """
 
 import argparse
+import os
 import random
 
 import torch
@@ -19,9 +20,15 @@ def main():
     device = torch.device(args.device)
     agent = Agent()
     agent.to(device)
+
+    if os.path.exists(args.path):
+        state_dict = torch.load(args.path, map_location=device)
+        agent.load_state_dict(state_dict)
+
     pool = Pool(args.pool)
     if pool.empty():
         pool.add(agent)
+
     ppo = PPO(agent, epsilon=args.epsilon, lr=args.lr, ent_reg=args.entropy)
     while True:
         rollouts, mean_rew, mean_len = gather_rollouts(args, agent, pool)
