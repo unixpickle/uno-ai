@@ -5,7 +5,8 @@ Core Uno game logic.
 from enum import Enum
 import random
 
-from .cards import CardType, full_deck
+from .actions import NopAction, ChallengeAction, DrawAction, PickColorAction, PlayCardAction
+from .cards import CardType, Color, full_deck
 
 
 class GameState(Enum):
@@ -48,26 +49,41 @@ class Game:
                 return i
         return None
 
-    def mask(self, player):
+    def turn(self):
         """
-        Get the current action mask for the player.
+        Get the current player.
         """
-        pass
+        return self._turn
+
+    def options(self):
+        """
+        Get the valid actions for the current player.
+        """
+        if self._state == GameState.PLAY_OR_DRAW:
+            return [NopAction(), DrawAction()] + self._play_options()
+        elif self._state == GameState.PLAY:
+            return [NopAction()] + self._play_options()
+        elif self._state == GameState.PLAY_DRAWN:
+            res = [NopAction()]
+            if self._can_play(self._current_hand()[-1]):
+                res += [PlayCardAction(len(self._current_hand()) - 1)]
+            return res
+        elif self._state == GameState.PICK_COLOR or self._state == GameState.PICK_COLOR_INIT:
+            return [PickColorAction(c) for c in [Color.RED, Color.ORANGE, Color.GREEN, Color.BLUE]]
+        elif self._state == GameState.CHALLENGE:
+            return [NopAction(), ChallengeAction()]
+        raise RuntimeError('invalid state')
 
     def obs(self, player):
         """
-        Generate an observation vector for the player.
+        Generate an observation vector for a player.
         """
         pass
 
-    def act(self, logits):
+    def act(self, action):
         """
-        Perform actions by providing the logits for all of
-        the players.
-
-        Args:
-            logits: a list of numpy arrays, one per player.
-              These will automatically be masked.
+        Take a turn by selecting the action for the
+        current player.
         """
         pass
 
@@ -95,3 +111,23 @@ class Game:
             self._turn = 1
         elif first_card.card_type == CardType.WILD:
             self._state = GameState.PICK_COLOR_INIT
+
+    def _can_play(self, card):
+        if card.card_type == CardType.WILD or card.card_type == CardType.WILD_DRAW:
+            return True
+        disc = self._discard[-1]
+        if card.color == disc.color:
+            return True
+        if card.card_type == CardType.NUMERAL and disc.card_type == CardType.NUMERAL:
+            return card.number == disc.number
+        return card.card_type == disc.card_type
+
+    def _play_options(self):
+        res = []
+        for i, card in enumerate(self._current_hand()):
+            if self._can_play(card):
+                res.append(PlayCardAction(i))
+        return res
+
+    def _current_hand(self):
+        return self._hands[self._turn]
