@@ -22,16 +22,16 @@ class Agent(nn.Module):
         super().__init__()
         self.input_proc = nn.Sequential(
             nn.Linear(OBS_VECTOR_SIZE, 256),
-            nn.Tanh,
+            nn.Tanh(),
             nn.Linear(256, 256),
-            nn.Tanh,
+            nn.Tanh(),
         )
         self.rnn = nn.LSTM(256, 256, num_layers=2)
         self.policy = nn.Linear(256, ACTION_VECTOR_SIZE)
         self.value = nn.Linear(256, 1)
 
     def device(self):
-        return self.parameters()[0].device
+        return next(self.parameters()).device
 
     def forward(self, inputs, states=None):
         """
@@ -54,9 +54,9 @@ class Agent(nn.Module):
         features = self.input_proc(flat_in)
         features = features.view(seq_len, batch, -1)
         if states is None:
-            outputs, h_n, c_n = self.rnn(features)
+            outputs, (h_n, c_n) = self.rnn(features)
         else:
-            outputs, h_n, c_n = self.rnn(features, states)
+            outputs, (h_n, c_n) = self.rnn(features, states)
         flat_out = outputs.view(-1, outputs.shape[-1])
         flat_logits = self.policy(flat_out)
         flat_values = self.value(flat_out)
@@ -81,7 +81,7 @@ class Agent(nn.Module):
               value: the value function output.
               state: the new RNN state.
         """
-        obs = torch.from_numpy(np.array(game.obs(player))).to(self.device())
+        obs = torch.from_numpy(np.array(game.obs(player), dtype=np.float32)).to(self.device())
         obs = obs.view(1, 1, -1)
         options = [NopAction()]
         if player == game.turn():

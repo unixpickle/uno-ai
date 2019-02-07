@@ -3,7 +3,6 @@ Proximal Policy Optimization.
 """
 
 import torch
-import torch.functional as F
 import torch.optim as optim
 
 
@@ -23,7 +22,7 @@ class PPO:
     def step(self, batch):
         logits, values, _ = self.agent(batch.observations)
         masked_logits = logits - (1 - batch.masks) * 10000
-        all_probs = F.log_softmax(masked_logits, dim=-1)
+        all_probs = torch.log_softmax(masked_logits, dim=-1)
         log_probs = torch.sum(all_probs * batch.actions, dim=-1)
 
         vf_loss = torch.mean(torch.pow(values - batch.targets, 2))
@@ -32,8 +31,8 @@ class PPO:
         clip_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
         pi_loss = -torch.mean(torch.min(ratio * batch.advs, clip_ratio * batch.advs))
 
-        neg_entropy = torch.sum(torch.exp(log_probs) * log_probs, dim=-1)
-        ent_loss = torch.mean(self.ent_reg * neg_entropy)
+        neg_entropy = torch.mean(torch.sum(torch.exp(log_probs) * log_probs, dim=-1))
+        ent_loss = self.ent_reg * neg_entropy
 
         loss = vf_loss + pi_loss + ent_loss
         self.optim.zero_grad()

@@ -63,6 +63,7 @@ class Rollout:
                 r = rollouts[i]
                 r.observations.append(game.obs(i))
                 r.outputs.append(res)
+            game.act(rollouts[game.turn()].outputs[-1]['action'])
         for i, r in enumerate(rollouts):
             if i == game.winner():
                 r.reward = 1.0
@@ -116,14 +117,19 @@ class RolloutBatch:
             masks.append(mask_seq)
             advs.append(adv_seq)
             targets.append(targ_seq)
-        self.observations = torch.from_numpy(np.transpose(
-            np.array(observations), axes=[1, 0, 2])).to(device)
-        self.actions = torch.from_numpy(np.transpose(np.array(actions), axes=[1, 0, 2])).to(device)
-        self.log_probs = torch.from_numpy(np.transpose(
-            np.array(log_probs), axes=[1, 0, 2])).to(device)
-        self.masks = torch.from_numpy(np.transpose(np.array(masks), axes=[1, 0, 2])).to(device)
-        self.advs = torch.from_numpy(np.transpose(np.array(advs), axes=[1, 0, 2])).to(device)
-        self.targets = torch.from_numpy(np.transpose(np.array(targets), axes=[1, 0, 2])).to(device)
+
+        def proc_list(l):
+            axes = [1, 0]
+            if len(np.array(l).shape) == 3:
+                axes.append(2)
+            return torch.from_numpy(
+                np.transpose(np.array(l, dtype=np.float32), axes=axes)).to(device)
+        self.observations = proc_list(observations)
+        self.actions = proc_list(actions)
+        self.log_probs = proc_list(log_probs)
+        self.masks = proc_list(masks)
+        self.advs = proc_list(advs)
+        self.targets = proc_list(targets)
 
 
 def _one_hot_action(action):
