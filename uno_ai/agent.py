@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .actions import ACTION_VECTOR_SIZE, NopAction
+from .actions import ACTION_VECTOR_SIZE, DrawAction, NopAction
 from .game import OBS_VECTOR_SIZE
 
 
@@ -62,6 +62,13 @@ class Agent(nn.Module):
         flat_values = self.value(flat_out)
         logits = flat_logits.view(seq_len, batch, ACTION_VECTOR_SIZE)
         values = flat_values.view(seq_len, batch)
+
+        # Negative bias towards draw, to make initial
+        # episodes much shorter.
+        bias_vec = [0.0] * ACTION_VECTOR_SIZE
+        bias_vec[DrawAction().index()] = -1
+        logits += torch.from_numpy(np.array(bias_vec, dtype=np.float32)).to(logits.device)
+
         return logits, values, (h_n, c_n)
 
     def step(self, game, player, state):

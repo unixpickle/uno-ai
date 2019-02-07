@@ -24,10 +24,10 @@ def main():
         pool.add(agent)
     ppo = PPO(agent, epsilon=args.epsilon, lr=args.lr, ent_reg=args.entropy)
     while True:
-        rollouts, mean_rew = gather_rollouts(args, agent, pool)
+        rollouts, mean_rew, mean_len = gather_rollouts(args, agent, pool)
         step_res = ppo.loop(rollouts, iters=args.iters)
-        print('reward=%f entropy_init=%f entropy_final=%f' %
-              (mean_rew, step_res[0]['entropy'], step_res[-1]['entropy']))
+        print('reward=%f steps=%f entropy_init=%f entropy_final=%f' %
+              (mean_rew, mean_len, step_res[0]['entropy'], step_res[-1]['entropy']))
         pool.add(agent)
         torch.save(agent.state_dict(), args.path)
 
@@ -40,7 +40,8 @@ def gather_rollouts(args, agent, pool):
         rs = Rollout.rollout(Game(args.players), agents)
         rollouts.append(rs[agents.index(agent)])
     mean_rew = sum(r.reward for r in rollouts) / len(rollouts)
-    return RolloutBatch(rollouts, agent.device()), mean_rew
+    mean_len = sum(r.num_steps for r in rollouts) / len(rollouts)
+    return RolloutBatch(rollouts, agent.device()), mean_rew, mean_len
 
 
 def arg_parser():
