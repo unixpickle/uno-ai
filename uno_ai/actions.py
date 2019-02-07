@@ -4,6 +4,8 @@ Action representations for Uno.
 
 from abc import ABC, abstractmethod
 
+ACTION_VECTOR_SIZE = 115
+
 
 class Action(ABC):
     """

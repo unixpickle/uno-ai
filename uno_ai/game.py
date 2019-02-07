@@ -8,6 +8,8 @@ import random
 from .actions import NopAction, ChallengeAction, DrawAction, PickColorAction, PlayCardAction
 from .cards import CardType, Color, full_deck
 
+OBS_VECTOR_SIZE = 109 * 20
+
 
 class GameState(Enum):
     PLAY_OR_DRAW = 0
