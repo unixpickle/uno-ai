@@ -56,7 +56,7 @@ class Rollout:
     def rollout(cls, game, agents):
         rollouts = [cls.empty() for _ in agents]
         states = [None] * len(agents)
-        while game.winner() is not None:
+        while game.winner() is None:
             for i, agent in enumerate(agents):
                 res = agent.step(game, i, states[i])
                 states[i] = res['state']
