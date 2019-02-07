@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+CARD_VEC_SIZE = 10 + 6 + 4
+
+
 def full_deck():
     """
     Create a complete Uno deck.
@@ -50,3 +53,15 @@ class Card:
         self.card_type = card_type
         self.color = color
         self.number = number
+
+    def vector(self):
+        """
+        Convert the card into a vector.
+        """
+        vec = [0.0] * CARD_VEC_SIZE
+        if self.number is not None:
+            vec[self.number] = 1.0
+        if self.color is not None:
+            vec[10 + self.color.value] = 1.0
+        vec[14 + self.card_type.value] = 1.0
+        return vec

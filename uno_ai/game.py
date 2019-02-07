@@ -60,7 +60,15 @@ class Game:
         """
         Generate an observation vector for a player.
         """
-        pass
+        vec = []
+        hand = self._hands[player]
+        for i in range(108):
+            if i >= len(hand):
+                vec += [0.0] * 20
+            else:
+                vec += hand[i].vector()
+        vec += self._discard[-1].vector()
+        return vec
 
     def options(self):
         """
