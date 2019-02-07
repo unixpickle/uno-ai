@@ -18,6 +18,7 @@ class PPO:
         steps = []
         for _ in range(iters):
             steps.append(self.step(batch))
+        return steps
 
     def step(self, batch):
         logits, values, _ = self.agent(batch.observations)
