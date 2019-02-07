@@ -105,8 +105,8 @@ class RolloutBatch:
             adv_seq = r.advantages(gamma=gamma, lam=lam)
             targ_seq = [adv + o['value'] for adv, o in zip(adv_seq, r.outputs)]
             for _ in range(seq_len - r.num_steps):
-                obs_seq.append([0] * OBS_VECTOR_SIZE)
-                act_seq.append(_one_hot_action(0))
+                obs_seq.append([0.0] * OBS_VECTOR_SIZE)
+                act_seq.append([1.0] + [0.0] * (ACTION_VECTOR_SIZE - 1))
                 log_seq.append(0)
                 mask_seq.append(_one_hot_action(0))
                 adv_seq.append(0)
