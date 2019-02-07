@@ -11,7 +11,7 @@ def main():
     while True:
         g = Game(4)
         num_moves = 0
-        while not g.winner():
+        while g.winner() is not None:
             action = random.choice(g.options())
             g.act(action)
             num_moves += 1

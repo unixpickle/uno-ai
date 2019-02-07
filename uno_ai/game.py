@@ -43,6 +43,12 @@ class Game:
 
         self._update_init_state()
 
+    def hands(self):
+        return self._hands
+
+    def discard(self):
+        return self._discard[-1]
+
     def winner(self):
         """
         If the game has ended, get the winner.
