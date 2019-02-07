@@ -106,6 +106,43 @@ class Agent(nn.Module):
         }
 
 
+class RandomAgent:
+    """
+    An agent that takes random actions.
+    """
+
+    def step(self, game, player, state):
+        options = [NopAction()]
+        if player == game.turn():
+            options = game.options()
+        return {
+            'options': options,
+            'action': random.choice(options),
+            'state': None,
+        }
+
+
+class BaselineAgent:
+    """
+    An agent that plays a card if possible, and otherwise
+    takes a random action.
+    """
+
+    def step(self, game, player, state):
+        options = [NopAction()]
+        if player == game.turn():
+            options = game.options()
+        if len(options) > 2:
+            action = random.choice(options[2:])
+        else:
+            action = random.choice(options)
+        return {
+            'options': options,
+            'action': action,
+            'state': None,
+        }
+
+
 def sample_softmax(logits):
     max_value = np.max(logits)
     probs = np.exp(logits - max_value)
