@@ -36,6 +36,7 @@ def arg_parser():
 class HumanAgent:
     def step(self, game, player, state):
         print('----------------------------')
+        print('Player:', game.turn())
         print('Discard:', game.discard())
         print('')
         print('Cards:')
