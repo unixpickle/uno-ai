@@ -55,6 +55,12 @@ class Game:
         """
         return self._turn
 
+    def obs(self, player):
+        """
+        Generate an observation vector for a player.
+        """
+        pass
+
     def options(self):
         """
         Get the valid actions for the current player.
@@ -74,18 +80,66 @@ class Game:
             return [NopAction(), ChallengeAction()]
         raise RuntimeError('invalid state')
 
-    def obs(self, player):
-        """
-        Generate an observation vector for a player.
-        """
-        pass
-
     def act(self, action):
         """
         Take a turn by selecting the action for the
         current player.
         """
-        pass
+        assert action in self.options()
+        if self._state == GameState.PLAY_OR_DRAW:
+            if isinstance(action, NopAction):
+                self._advance_turn()
+            elif isinstance(action, DrawAction):
+                self._state = GameState.PLAY_DRAWN
+                self._current_hand().append(self._draw())
+            else:
+                self._play_card(action)
+        elif self._state == GameState.PLAY:
+            if isinstance(action, NopAction):
+                self._state = GameState.PLAY_OR_DRAW
+                self._advance_turn()
+            else:
+                self._play_card(action)
+        elif self._state == GameState.PLAY_DRAWN:
+            if isinstance(action, NopAction):
+                self._state = GameState.PLAY_OR_DRAW
+                self._advance_turn()
+            else:
+                self._play_card(action)
+        elif self._state == GameState.PICK_COLOR or self._state == GameState.PICK_COLOR_INIT:
+            disc = self._discard[-1]
+            disc.color = action.color
+            if self._state == GameState.PICK_COLOR:
+                if disc.card_type == CardType.WILD:
+                    self._state = GameState.PLAY_OR_DRAW
+                else:
+                    self._state = GameState.CHALLENGE
+                self._advance_turn()
+            else:
+                self._state = GameState.PLAY
+        elif self._state == GameState.CHALLENGE:
+            if isinstance(action, NopAction):
+                for _ in range(4):
+                    self._current_hand().append(self._draw())
+                self._advance_turn()
+            else:
+                # TODO: Check the challenge.
+                pass
+                self._advance_turn()
+
+    def _advance_turn(self):
+        self._turn += self._direction
+        if self._turn < 0:
+            self._turn += self._num_players
+        elif self._turn >= self._num_players:
+            self._turn -= self._num_players
+
+    def _play_card(self, action):
+        card = self._current_hand()[action.index]
+        self._current_hand().remove(card)
+        self._discard.append(card)
+        # TODO: figure out what to do with the card from here.
+        self._advance_turn()
 
     def _draw(self):
         if len(self._deck):
