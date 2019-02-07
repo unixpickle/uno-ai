@@ -43,6 +43,9 @@ class Color(Enum):
     GREEN = 2
     BLUE = 3
 
+    def __str__(self):
+        return self.name.lower()
+
 
 class Card:
     """
@@ -65,3 +68,22 @@ class Card:
             vec[10 + self.color.value] = 1.0
         vec[14 + self.card_type.value] = 1.0
         return vec
+
+    def __str__(self):
+        if self.card_type == CardType.NUMERAL:
+            return '%s %d' % (self.color, self.number)
+        elif self.card_type == CardType.SKIP:
+            return '%s skip' % self.color
+        elif self.card_type == CardType.REVERSE:
+            return '%s reverse' % self.color
+        elif self.card_type == CardType.DRAW_TWO:
+            return '%s draw two' % self.color
+        elif self.card_type == CardType.WILD:
+            if self.color is None:
+                return 'wild card'
+            return 'wild card (%s)' % self.color
+        elif self.card_type == CardType.WILD_DRAW:
+            if self.color is None:
+                return 'wild +4'
+            return 'wild +4 (%s)' % self.color
+        raise RuntimeError('unknown type')

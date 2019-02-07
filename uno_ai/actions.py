@@ -26,6 +26,9 @@ class NopAction(Action):
     def __eq__(self, other):
         return type(other) == NopAction
 
+    def __str__(self):
+        return 'do nothing'
+
 
 class ChallengeAction(Action):
     def index(self):
@@ -34,6 +37,9 @@ class ChallengeAction(Action):
     def __eq__(self, other):
         return type(other) == ChallengeAction
 
+    def __str__(self):
+        return 'challenge'
+
 
 class DrawAction(Action):
     def index(self):
@@ -41,6 +47,9 @@ class DrawAction(Action):
 
     def __eq__(self, other):
         return type(other) == DrawAction
+
+    def __str__(self):
+        return 'draw a card'
 
 
 class PickColorAction(Action):
@@ -53,6 +62,9 @@ class PickColorAction(Action):
     def __eq__(self, other):
         return type(other) == PickColorAction and other.color == self.color
 
+    def __str__(self):
+        return 'pick color %s' % self.color
+
 
 class PlayCardAction(Action):
     def __init__(self, index):
@@ -63,3 +75,6 @@ class PlayCardAction(Action):
 
     def __eq__(self, other):
         return type(other) == PlayCardAction and other.raw_index == self.raw_index
+
+    def __str__(self):
+        return 'play card %d' % self.raw_index
