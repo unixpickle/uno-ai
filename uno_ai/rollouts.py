@@ -26,7 +26,27 @@ class Rollout:
 
     @property
     def num_steps(self):
+        """
+        Get the number of timesteps.
+        """
         return len(self.observations)
+
+    def advantages(self, gamma=0.99, lam=0.95):
+        """
+        Compute the advantages using Generalized
+        Advantage Estimation.
+        """
+        res = []
+        adv = 0
+        for i in range(self.num_steps)[::-1]:
+            if i == self.num_steps - 1:
+                delta = self.reward - self.outputs[-1]['value']
+            else:
+                delta = gamma * self.outputs[i + 1]['value'] - self.outputs[i]['value']
+            adv *= lam * gamma
+            adv += delta
+            res.append(adv)
+        return res[::-1]
 
     @classmethod
     def empty(cls):
@@ -62,28 +82,34 @@ class RolloutBatch:
       masks: a (seq_len, batch, ACTION_VECTOR_SIZE) Tensor
         of values where a 1 indicates that an action was
         allowed, and a 0 indicates otherwise.
+      advs: a (seq_len, batch) Tensor of advantages.
     """
 
-    def __init__(self, rollouts, device):
+    def __init__(self, rollouts, device, gamma=0.99, lam=0.95):
         seq_len = max(r.num_steps for r in rollouts)
         observations = []
         actions = []
         masks = []
+        advs = []
         for r in rollouts:
             obs_seq = r.observations.copy()
             act_seq = [_one_hot_action(o['action']) for o in r.outputs]
             mask_seq = [_option_mask(o['options']) for o in r.outputs]
+            adv_seq = r.advantages(gamma=gamma, lam=lam)
             for _ in range(seq_len - r.num_steps):
                 obs_seq.append([0] * OBS_VECTOR_SIZE)
                 act_seq.append(_one_hot_action(0))
                 mask_seq.append(_one_hot_action(0))
+                adv_seq.append(0)
             observations.append(obs_seq)
             actions.append(act_seq)
             masks.append(mask_seq)
+            advs.append(adv_seq)
         self.observations = torch.from_numpy(np.transpose(
             np.array(observations), axes=[1, 0, 2])).to(device)
         self.actions = torch.from_numpy(np.transpose(np.array(actions), axes=[1, 0, 2])).to(device)
         self.masks = torch.from_numpy(np.transpose(np.array(masks), axes=[1, 0, 2])).to(device)
+        self.advs = torch.from_numpy(np.transpose(np.array(advs), axes=[1, 0, 2])).to(device)
 
 
 def _one_hot_action(action):
