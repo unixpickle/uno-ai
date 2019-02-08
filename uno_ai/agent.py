@@ -24,8 +24,8 @@ class Agent(nn.Module):
             nn.Linear(OBS_VECTOR_SIZE, 256),
             nn.Tanh(),
             nn.Linear(256, 256),
-            nn.Tanh(),
         )
+        self.norm = nn.LayerNorm(256)
         self.rnn = nn.LSTM(256, 256, num_layers=2)
         self.policy = nn.Linear(256, ACTION_VECTOR_SIZE)
         self.value = nn.Linear(256, 1)
@@ -53,7 +53,7 @@ class Agent(nn.Module):
         """
         seq_len, batch = inputs.shape[0], inputs.shape[1]
         flat_in = inputs.view(-1, OBS_VECTOR_SIZE)
-        features = self.input_proc(flat_in)
+        features = self.norm(self.input_proc(flat_in))
         features = features.view(seq_len, batch, -1)
         if states is None:
             outputs, (h_n, c_n) = self.rnn(features)
