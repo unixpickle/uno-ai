@@ -8,7 +8,8 @@ import random
 from .actions import NopAction, ChallengeAction, DrawAction, PickColorAction, PlayCardAction
 from .cards import CardType, Color, full_deck
 
-OBS_VECTOR_SIZE = 109 * 20
+MAX_PLAYERS = 8
+OBS_VECTOR_SIZE = 109 * 20 + MAX_PLAYERS * 2
 
 
 class GameState(Enum):
@@ -74,6 +75,8 @@ class Game:
             vec += card.vector()
         vec += [0.0] * (20 * (108 - len(hand)))
         vec += self._discard[-1].vector()
+        vec += _player_vec(player)
+        vec += _player_vec(self.turn())
         return vec
 
     def options(self):
@@ -223,3 +226,9 @@ class Game:
 
     def _current_hand(self):
         return self._hands[self._turn]
+
+
+def _player_vec(idx):
+    res = [0.0] * MAX_PLAYERS
+    res[idx] = 1.0
+    return res
