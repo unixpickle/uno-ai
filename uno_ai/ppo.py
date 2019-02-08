@@ -26,6 +26,8 @@ class PPO:
         log_probs = torch.sum(all_probs * batch.actions, dim=-1)
 
         vf_loss = batch.masked_mean(torch.pow(values - batch.targets, 2))
+        variance = batch.masked_var(batch.targets)
+        explained = 1 - vf_loss / variance
 
         ratio = torch.exp(log_probs - batch.log_probs)
         clip_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
@@ -46,4 +48,5 @@ class PPO:
             'ent_loss': ent_loss.item(),
             'entropy': -neg_entropy.item(),
             'clipped': clip_frac.item(),
+            'explained': explained.item(),
         }

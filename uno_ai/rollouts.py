@@ -136,6 +136,15 @@ class RolloutBatch:
         """
         return torch.sum(seqs * self.seq_mask) / torch.sum(self.seq_mask)
 
+    def masked_var(self, seqs):
+        """
+        Compute a variance using the sequence mask.
+        """
+        num_entries = torch.sum(self.seq_mask)
+        ex2 = torch.sum(torch.pow(seqs, 2) * self.seq_mask) / num_entries
+        ex = torch.sum(seqs * self.seq_mask) / num_entries
+        return ex2 - torch.pow(ex, 2)
+
 
 def _one_hot_action(action):
     res = [0.0] * ACTION_VECTOR_SIZE
