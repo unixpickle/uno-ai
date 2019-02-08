@@ -25,13 +25,13 @@ class PPO:
         all_probs = torch.log_softmax(masked_logits, dim=-1)
         log_probs = torch.sum(all_probs * batch.actions, dim=-1)
 
-        vf_loss = torch.mean(torch.pow(values - batch.targets, 2))
+        vf_loss = batch.masked_mean(torch.pow(values - batch.targets, 2))
 
         ratio = torch.exp(log_probs - batch.log_probs)
         clip_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
-        pi_loss = -torch.mean(torch.min(ratio * batch.advs, clip_ratio * batch.advs))
+        pi_loss = -batch.masked_mean(torch.min(ratio * batch.advs, clip_ratio * batch.advs))
 
-        neg_entropy = torch.mean(torch.sum(torch.exp(all_probs) * all_probs, dim=-1))
+        neg_entropy = batch.masked_mean(torch.sum(torch.exp(all_probs) * all_probs, dim=-1))
         ent_loss = self.ent_reg * neg_entropy
 
         loss = vf_loss + pi_loss + ent_loss

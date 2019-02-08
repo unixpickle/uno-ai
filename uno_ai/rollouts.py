@@ -87,6 +87,8 @@ class RolloutBatch:
         allowed, and a 0 indicates otherwise.
       advs: a (seq_len, batch) Tensor of advantages.
       targets: a (seq_len, batch) Tensor of target values.
+      seq_mask: a (seq_len, batch) Tensor of values where
+        a 1 indicates that the element is valid.
     """
 
     def __init__(self, rollouts, device, gamma=0.99, lam=0.95):
@@ -97,6 +99,7 @@ class RolloutBatch:
         masks = []
         advs = []
         targets = []
+        seq_mask = []
         for r in rollouts:
             obs_seq = r.observations.copy()
             act_seq = [_one_hot_action(o['action']) for o in r.outputs]
@@ -117,6 +120,7 @@ class RolloutBatch:
             masks.append(mask_seq)
             advs.append(adv_seq)
             targets.append(targ_seq)
+            seq_mask.append([1.0] * r.num_steps + [0.0] * (seq_len - r.num_steps))
 
         def proc_list(l):
             axes = [1, 0]
@@ -124,12 +128,26 @@ class RolloutBatch:
                 axes.append(2)
             return torch.from_numpy(
                 np.transpose(np.array(l, dtype=np.float32), axes=axes)).to(device)
+
         self.observations = proc_list(observations)
         self.actions = proc_list(actions)
         self.log_probs = proc_list(log_probs)
         self.masks = proc_list(masks)
         self.advs = proc_list(advs)
         self.targets = proc_list(targets)
+        self.seq_mask = proc_list(seq_mask)
+
+    def masked_mean(self, seqs):
+        """
+        Compute a mean using the sequence mask.
+
+        Args:
+            seqs: a (seq_len, batch) Tensor.
+
+        Returns:
+            A masked mean.
+        """
+        return torch.sum(seqs * self.seq_mask) / torch.sum(self.seq_mask)
 
 
 def _one_hot_action(action):
