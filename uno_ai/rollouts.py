@@ -80,8 +80,8 @@ class RolloutBatch:
       actions: a (seq_len, batch, ACTION_VECTOR_SIZE)
         Tensor of one-hot vectors indicating which action
         was taken at every timestep.
-      log_probs: the initial log probabilities of the
-        actions.
+      log_probs: a (seq_len, batch) Tensor storing the
+        initial log probabilities of the actions.
       masks: a (seq_len, batch, ACTION_VECTOR_SIZE) Tensor
         of values where a 1 indicates that an action was
         allowed, and a 0 indicates otherwise.
@@ -93,41 +93,28 @@ class RolloutBatch:
 
     def __init__(self, rollouts, device, gamma=0.99, lam=0.95):
         seq_len = max(r.num_steps for r in rollouts)
-        observations = []
-        actions = []
-        log_probs = []
-        masks = []
-        advs = []
-        targets = []
-        seq_mask = []
-        for r in rollouts:
-            obs_seq = r.observations.copy()
-            act_seq = [_one_hot_action(o['action']) for o in r.outputs]
-            log_seq = [o['log_prob'] for o in r.outputs]
-            mask_seq = [_option_mask(o['options']) for o in r.outputs]
-            adv_seq = r.advantages(gamma=gamma, lam=lam)
-            targ_seq = [adv + o['value'] for adv, o in zip(adv_seq, r.outputs)]
-            for _ in range(seq_len - r.num_steps):
-                obs_seq.append([0.0] * OBS_VECTOR_SIZE)
-                act_seq.append([1.0] + [0.0] * (ACTION_VECTOR_SIZE - 1))
-                log_seq.append(0)
-                mask_seq.append(act_seq[-1])
-                adv_seq.append(0)
-                targ_seq.append(0)
-            observations.append(obs_seq)
-            actions.append(act_seq)
-            log_probs.append(log_seq)
-            masks.append(mask_seq)
-            advs.append(adv_seq)
-            targets.append(targ_seq)
-            seq_mask.append([1.0] * r.num_steps + [0.0] * (seq_len - r.num_steps))
+        batch = len(rollouts)
+        observations = np.zeros([seq_len, batch, OBS_VECTOR_SIZE], dtype=np.float32)
+        actions = np.zeros([seq_len, batch, ACTION_VECTOR_SIZE], dtype=np.float32)
+        log_probs = np.zeros([seq_len, batch], dtype=np.float32)
+        masks = np.zeros([seq_len, batch, ACTION_VECTOR_SIZE], dtype=np.float32)
+        advs = np.zeros([seq_len, batch], dtype=np.float32)
+        targets = np.zeros([seq_len, batch], dtype=np.float32)
+        seq_mask = np.zeros([seq_len, batch], dtype=np.float32)
+        for i, r in enumerate(rollouts):
+            observations[:r.num_steps, i, :] = r.observations
+            actions[:r.num_steps, i, :] = [_one_hot_action(o['action']) for o in r.outputs]
+            actions[r.num_steps:, i, 0] = 1
+            log_probs[:r.num_steps, i] = [o['log_prob'] for o in r.outputs]
+            masks[:r.num_steps, i, :] = [_option_mask(o['options']) for o in r.outputs]
+            masks[r.num_steps:, i, 0] = 1
+            our_advs = r.advantages(gamma=gamma, lam=lam)
+            advs[:r.num_steps, i] = our_advs
+            targets[:r.num_steps, i] = [adv + o['value'] for adv, o in zip(our_advs, r.outputs)]
+            seq_mask[:r.num_steps, i] = 1
 
         def proc_list(l):
-            axes = [1, 0]
-            if len(np.array(l).shape) == 3:
-                axes.append(2)
-            return torch.from_numpy(
-                np.transpose(np.array(l, dtype=np.float32), axes=axes)).to(device)
+            return torch.from_numpy(l).to(device)
 
         self.observations = proc_list(observations)
         self.actions = proc_list(actions)
