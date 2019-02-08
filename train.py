@@ -8,7 +8,7 @@ import random
 
 import torch
 
-from uno_ai.agent import Agent
+from uno_ai.agent import Agent, BaselineAgent
 from uno_ai.game import Game
 from uno_ai.pool import Pool
 from uno_ai.ppo import PPO
@@ -43,7 +43,10 @@ def main():
 def gather_rollouts(args, agent, pool):
     rollouts = []
     for _ in range(args.batch):
-        agents = [agent] + [pool.sample(agent.device()) for _ in range(args.players - 1)]
+        if args.baseline:
+            agents = [agent] + [BaselineAgent() for _ in range(args.players - 1)]
+        else:
+            agents = [agent] + [pool.sample(agent.device()) for _ in range(args.players - 1)]
         random.shuffle(agents)
         rs = Rollout.rollout(Game(args.players), agents)
         rollouts.append(rs[agents.index(agent)])
@@ -63,6 +66,7 @@ def arg_parser():
     parser.add_argument('--players', help='number of players', default=4, type=int)
     parser.add_argument('--batch', help='rollouts per batch', default=128, type=int)
     parser.add_argument('--device', help='torch device to use', default='cpu')
+    parser.add_argument('--baseline', help='train against a baseline', action='store_true')
     return parser
 
 
