@@ -30,6 +30,7 @@ class PPO:
         ratio = torch.exp(log_probs - batch.log_probs)
         clip_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
         pi_loss = -batch.masked_mean(torch.min(ratio * batch.advs, clip_ratio * batch.advs))
+        clip_frac = batch.masked_mean(torch.gt(ratio * batch.advs, clip_ratio * batch.advs).float())
 
         neg_entropy = batch.masked_mean(torch.sum(torch.exp(all_probs) * all_probs, dim=-1))
         ent_loss = self.ent_reg * neg_entropy
@@ -44,4 +45,5 @@ class PPO:
             'pi_loss': pi_loss.item(),
             'ent_loss': ent_loss.item(),
             'entropy': -neg_entropy.item(),
+            'clipped': clip_frac.item(),
         }

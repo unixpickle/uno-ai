@@ -33,8 +33,9 @@ def main():
     while True:
         rollouts, mean_rew, mean_len = gather_rollouts(args, agent, pool)
         step_res = ppo.loop(rollouts, iters=args.iters)
-        print('reward=%f steps=%f entropy_init=%f entropy_final=%f' %
-              (mean_rew, mean_len, step_res[0]['entropy'], step_res[-1]['entropy']))
+        print('reward=%f steps=%f entropy_init=%f entropy_final=%f clipped=%f' %
+              (mean_rew, mean_len, step_res[0]['entropy'], step_res[-1]['entropy'],
+               step_res[-1]['clipped']))
         pool.add(agent)
         torch.save(agent.state_dict(), args.path)
 
