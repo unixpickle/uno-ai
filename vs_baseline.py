@@ -1,5 +1,5 @@
 """
-Play an agent against random agent.
+Play an agent against random agents.
 """
 
 import argparse
@@ -22,14 +22,14 @@ def main():
         agent.load_state_dict(state_dict)
 
     baseline = BaselineAgent()
-    agents = [baseline] + [agent] * (args.players - 1)
+    agents = [baseline] * (args.players - 1) + [agent]
 
     rewards = []
     while True:
         game = Game(args.players)
         random.shuffle(agents)
         rs = Rollout.rollout(game, agents)
-        rewards.append(rs[agents.index(baseline)].reward)
+        rewards.append(rs[agents.index(agent)].reward)
         print('mean=%f' % (sum(rewards) / len(rewards)))
 
 
