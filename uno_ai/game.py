@@ -70,11 +70,9 @@ class Game:
         """
         vec = []
         hand = self._hands[player]
-        for i in range(108):
-            if i >= len(hand):
-                vec += [0.0] * 20
-            else:
-                vec += hand[i].vector()
+        for card in hand:
+            vec += card.vector()
+        vec += [0.0] * (20 * (108 - len(hand)))
         vec += self._discard[-1].vector()
         return vec
 
