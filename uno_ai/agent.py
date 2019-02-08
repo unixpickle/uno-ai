@@ -29,6 +29,8 @@ class Agent(nn.Module):
         self.rnn = nn.LSTM(256, 256, num_layers=2)
         self.policy = nn.Linear(256, ACTION_VECTOR_SIZE)
         self.value = nn.Linear(256, 1)
+        for param in list(self.policy.parameters()) + list(self.value.parameters()):
+            param.data.fill_(0.0)
 
     def device(self):
         return next(self.parameters()).device
