@@ -9,7 +9,7 @@ from .actions import NopAction, ChallengeAction, DrawAction, PickColorAction, Pl
 from .cards import CardType, Color, full_deck
 
 MAX_PLAYERS = 8
-OBS_VECTOR_SIZE = 109 * 20 + MAX_PLAYERS * 2
+OBS_VECTOR_SIZE = 109 * 20 + MAX_PLAYERS * 3
 
 
 class GameState(Enum):
@@ -24,6 +24,7 @@ class GameState(Enum):
 
 class Game:
     def __init__(self, num_players):
+        assert num_players <= MAX_PLAYERS
         self._num_players = num_players
         self._deck = full_deck()
         random.shuffle(self._deck)
@@ -77,6 +78,9 @@ class Game:
         vec += self._discard[-1].vector()
         vec += _player_vec(player)
         vec += _player_vec(self.turn())
+        for hand in self._hands:
+            vec += [float(len(hand))]
+        vec += [0.0] * (MAX_PLAYERS - self._num_players)
         return vec
 
     def options(self):
