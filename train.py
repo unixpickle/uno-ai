@@ -52,7 +52,8 @@ def gather_rollouts(args, agent, pool):
         rollouts.append(rs[agents.index(agent)])
     mean_rew = sum(r.reward for r in rollouts) / len(rollouts)
     mean_len = sum(r.num_steps for r in rollouts) / len(rollouts)
-    return RolloutBatch(rollouts, agent.device()), mean_rew, mean_len
+    return (RolloutBatch(rollouts, agent.device(), gamma=args.gamma, lam=args.lam),
+            mean_rew, mean_len)
 
 
 def arg_parser():
@@ -65,6 +66,8 @@ def arg_parser():
     parser.add_argument('--iters', help='PPO iterations', default=8, type=int)
     parser.add_argument('--players', help='number of players', default=4, type=int)
     parser.add_argument('--batch', help='rollouts per batch', default=128, type=int)
+    parser.add_argument('--gamma', help='GAE gamma', default=1.0, type=float)
+    parser.add_argument('--lam', help='GAE lambda', default=1.0, type=float)
     parser.add_argument('--device', help='torch device to use', default='cpu')
     parser.add_argument('--baseline', help='train against a baseline', action='store_true')
     return parser

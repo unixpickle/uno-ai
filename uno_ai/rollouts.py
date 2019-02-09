@@ -31,7 +31,7 @@ class Rollout:
         """
         return len(self.observations)
 
-    def advantages(self, gamma=0.99, lam=0.95):
+    def advantages(self, gamma, lam):
         """
         Compute the advantages using Generalized
         Advantage Estimation.
@@ -91,7 +91,7 @@ class RolloutBatch:
         a 1 indicates that the element is valid.
     """
 
-    def __init__(self, rollouts, device, gamma=0.99, lam=0.95):
+    def __init__(self, rollouts, device, gamma, lam):
         seq_len = max(r.num_steps for r in rollouts)
         batch = len(rollouts)
         observations = np.zeros([seq_len, batch, OBS_VECTOR_SIZE], dtype=np.float32)
