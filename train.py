@@ -3,6 +3,7 @@ Train an Uno agent.
 """
 
 import argparse
+import itertools
 import os
 import random
 
@@ -30,13 +31,14 @@ def main():
         pool.add(agent)
 
     ppo = PPO(agent, epsilon=args.epsilon, lr=args.lr, ent_reg=args.entropy)
-    while True:
+    for i in itertools.count():
         rollouts, mean_rew, mean_len = gather_rollouts(args, agent, pool)
         step_res = ppo.loop(rollouts, iters=args.iters)
         print('reward=%f steps=%f explained=%f entropy_init=%f entropy_final=%f clipped=%f' %
               (mean_rew, mean_len, step_res[0]['explained'], step_res[0]['entropy'],
                step_res[-1]['entropy'], step_res[-1]['clipped']))
-        pool.add(agent)
+        if not i % args.save_interval:
+            pool.add(agent)
         torch.save(agent.state_dict(), args.path)
 
 
@@ -70,6 +72,8 @@ def arg_parser():
     parser.add_argument('--lam', help='GAE lambda', default=1.0, type=float)
     parser.add_argument('--device', help='torch device to use', default='cpu')
     parser.add_argument('--baseline', help='train against a baseline', action='store_true')
+    parser.add_argument('--save-interval', help='iterations per agent checkpoint',
+                        default=10, type=int)
     return parser
 
 
